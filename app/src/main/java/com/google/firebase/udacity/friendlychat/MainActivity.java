@@ -37,11 +37,6 @@ import com.firebase.ui.auth.BuildConfig;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
@@ -53,9 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
-
-    private static final String TAG = "MainActivity";
+public class MainActivity extends AppCompatActivity implements FriendlyChatView {
 
     public static final String ANONYMOUS = "anonymous";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
@@ -72,14 +65,13 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUsername;
 
-    private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference databaseReference;
-    private ChildEventListener childEventListener;
     private FirebaseAuth firebaseAuth;
     private AuthStateListener authStateListener;
     private FirebaseStorage firebaseStorage;
     private StorageReference chatPhotoReference;
     private FirebaseRemoteConfig firebaseRemoteConfig;
+
+    private FirebaseController firebaseController;
 
 
     @Override
@@ -89,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
         mUsername = ANONYMOUS;
 
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        databaseReference = firebaseDatabase.getReference().child("messages");
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
         chatPhotoReference = firebaseStorage.getReference().child("chat_photos");
@@ -143,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
         // Send button sends a message and clears the EditText
         mSendButton.setOnClickListener(view -> {
             FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(), mUsername, null);
-            databaseReference.push().setValue(friendlyMessage);
+            firebaseController.insertMessage(friendlyMessage);
             mMessageEditText.setText("");
         });
 
@@ -173,6 +163,8 @@ public class MainActivity extends AppCompatActivity {
         defaultConfigMap.put(FRIENDLY_MSG_LENGTH_KEY, DEFAULT_MSG_LENGTH_LIMIT);
         firebaseRemoteConfig.setDefaults(defaultConfigMap);
         fetchConfig();
+
+        firebaseController = new FirebaseController(this);
     }
 
     private void onSingedInInitialize(String displayName) {
@@ -187,36 +179,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void attachDatabaseListener() {
-        if (childEventListener == null) {
-            childEventListener = new ChildEventListener() {
-                @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                    mMessageAdapter.add(friendlyMessage);
-                }
-
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                }
-
-                public void onChildRemoved(DataSnapshot dataSnapshot) {
-                }
-
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-                }
-
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            };
-
-            databaseReference.addChildEventListener(childEventListener);
-        }
+        firebaseController.singedIn();
     }
 
     private void detachDatabaseReadListener() {
-        if (childEventListener != null) {
-            databaseReference.removeEventListener(childEventListener);
-            childEventListener = null;
-        }
+        firebaseController.signedOut();
     }
 
     @Override
@@ -268,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
             photoRef.putFile(selectedImageUri).addOnSuccessListener(this, taskSnapshot -> {
                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                 FriendlyMessage message = new FriendlyMessage(null, mUsername, downloadUrl.toString());
-                databaseReference.push().setValue(message);
+                firebaseController.insertMessage(message);
             });
         }
     }
@@ -284,5 +251,10 @@ public class MainActivity extends AppCompatActivity {
     private void applyRetrievedLengthLimit() {
         Long friendly_msg_length = firebaseRemoteConfig.getLong(FRIENDLY_MSG_LENGTH_KEY);
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(friendly_msg_length.intValue())});
+    }
+
+    @Override
+    public void addMessage(FriendlyMessage friendlyMessage) {
+        mMessageAdapter.add(friendlyMessage);
     }
 }
