@@ -33,20 +33,15 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.BuildConfig;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements FriendlyChatView {
 
@@ -54,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     private static final int RC_SIGN_IN = 123;
     private static final int RC_PHOTO_PICKER = 2;
-    private static final String FRIENDLY_MSG_LENGTH_KEY = "friendly_msg_length";
+    public static final String FRIENDLY_MSG_LENGTH_KEY = "friendly_msg_length";
 
     private ListView mMessageListView;
     private MessageAdapter mMessageAdapter;
@@ -69,8 +64,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     private AuthStateListener authStateListener;
     private FirebaseStorage firebaseStorage;
     private StorageReference chatPhotoReference;
-    private FirebaseRemoteConfig firebaseRemoteConfig;
-
     private FirebaseController firebaseController;
 
 
@@ -84,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
         chatPhotoReference = firebaseStorage.getReference().child("chat_photos");
-        firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
 
         // Initialize references to views
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -155,16 +147,8 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
             }
         };
 
-        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
-                .setDeveloperModeEnabled(BuildConfig.DEBUG)
-                .build();
-        firebaseRemoteConfig.setConfigSettings(configSettings);
-        Map<String, Object> defaultConfigMap = new HashMap<>();
-        defaultConfigMap.put(FRIENDLY_MSG_LENGTH_KEY, DEFAULT_MSG_LENGTH_LIMIT);
-        firebaseRemoteConfig.setDefaults(defaultConfigMap);
-        fetchConfig();
-
         firebaseController = new FirebaseController(this);
+        firebaseController.fetchConfig();
     }
 
     private void onSingedInInitialize(String displayName) {
@@ -240,17 +224,8 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
         }
     }
 
-    public void fetchConfig() {
-        long cacheExpiration = 10;
-        firebaseRemoteConfig.fetch(cacheExpiration).addOnSuccessListener(ignored -> {
-            firebaseRemoteConfig.activateFetched();
-            applyRetrievedLengthLimit();
-        });
-    }
-
-    private void applyRetrievedLengthLimit() {
-        Long friendly_msg_length = firebaseRemoteConfig.getLong(FRIENDLY_MSG_LENGTH_KEY);
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(friendly_msg_length.intValue())});
+    public void applyRetrievedLengthLimit(int messageLength) {
+        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(messageLength)});
     }
 
     @Override
