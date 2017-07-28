@@ -16,7 +16,6 @@
 package com.google.firebase.udacity.friendlychat;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -36,8 +35,6 @@ import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,8 +59,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
 
     private FirebaseAuth firebaseAuth;
     private AuthStateListener authStateListener;
-    private FirebaseStorage firebaseStorage;
-    private StorageReference chatPhotoReference;
     private FirebaseController firebaseController;
 
 
@@ -75,8 +70,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
         mUsername = ANONYMOUS;
 
         firebaseAuth = FirebaseAuth.getInstance();
-        firebaseStorage = FirebaseStorage.getInstance();
-        chatPhotoReference = firebaseStorage.getReference().child("chat_photos");
 
         // Initialize references to views
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -147,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
             }
         };
 
-        firebaseController = new FirebaseController(this);
+        firebaseController = new FirebaseController(this, this);
         firebaseController.fetchConfig();
     }
 
@@ -214,18 +207,17 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
                 finish();
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
-            Uri selectedImageUri = data.getData();
-            StorageReference photoRef = chatPhotoReference.child(selectedImageUri.getLastPathSegment());
-            photoRef.putFile(selectedImageUri).addOnSuccessListener(this, taskSnapshot -> {
-                Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                FriendlyMessage message = new FriendlyMessage(null, mUsername, downloadUrl.toString());
-                firebaseController.insertMessage(message);
-            });
+            firebaseController.uploadPhoto(data.getData());
         }
     }
 
     public void applyRetrievedLengthLimit(int messageLength) {
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(messageLength)});
+    }
+
+    @Override
+    public void imageUploaded(String imageUrl) {
+        firebaseController.insertMessage(new FriendlyMessage(null, mUsername, imageUrl));
     }
 
     @Override

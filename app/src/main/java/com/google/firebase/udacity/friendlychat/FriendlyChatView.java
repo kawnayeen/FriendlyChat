@@ -7,4 +7,5 @@ package com.google.firebase.udacity.friendlychat;
 public interface FriendlyChatView {
     void addMessage(FriendlyMessage friendlyMessage);
     void applyRetrievedLengthLimit(int messageLength);
+    void imageUploaded(String imageUrl);
 }

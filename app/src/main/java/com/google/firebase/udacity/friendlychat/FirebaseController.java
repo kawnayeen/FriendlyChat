@@ -1,9 +1,14 @@
 package com.google.firebase.udacity.friendlychat;
 
+import android.app.Activity;
+import android.net.Uri;
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,24 +22,30 @@ import static com.google.firebase.udacity.friendlychat.MainActivity.FRIENDLY_MSG
  */
 public class FirebaseController {
     private static final String MESSAGES = "messages";
+    private static final String CHAT_PHOTOS = "chat_photos";
     private FirebaseRemoteConfig firebaseRemoteConfig;
-
-
     private FriendlyChatView view;
-
     private DatabaseReference msgDatabaseReference;
+    private StorageReference chatPhotoReference;
     private MessageEventListener msgEventListener;
+    private Activity activity;
 
-    public FirebaseController(FriendlyChatView view) {
+    public FirebaseController(FriendlyChatView view, Activity activity) {
         this.view = view;
-        FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+        this.activity = activity;
         firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        msgDatabaseReference = firebaseDatabase.getReference().child(MESSAGES);
+        msgDatabaseReference = FirebaseDatabase.getInstance().getReference().child(MESSAGES);
+        chatPhotoReference = FirebaseStorage.getInstance().getReference().child(CHAT_PHOTOS);
         msgEventListener = null;
     }
 
     public void insertMessage(FriendlyMessage friendlyMessage) {
         msgDatabaseReference.push().setValue(friendlyMessage);
+    }
+
+    public void uploadPhoto(Uri imageUri) {
+        StorageReference photoRef = chatPhotoReference.child(imageUri.getLastPathSegment());
+        photoRef.putFile(imageUri).addOnSuccessListener(activity, taskSnapshot -> view.imageUploaded(taskSnapshot.getDownloadUrl().toString()));
     }
 
     public void singedIn() {
