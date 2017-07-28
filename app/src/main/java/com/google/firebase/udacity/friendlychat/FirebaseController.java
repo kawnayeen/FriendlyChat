@@ -3,6 +3,8 @@ package com.google.firebase.udacity.friendlychat;
 import android.app.Activity;
 import android.net.Uri;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -28,15 +30,19 @@ public class FirebaseController {
     private DatabaseReference msgDatabaseReference;
     private StorageReference chatPhotoReference;
     private MessageEventListener msgEventListener;
+    private FirebaseAuth firebaseAuth;
+    private AuthStateListener authStateListener;
     private Activity activity;
 
     public FirebaseController(FriendlyChatView view, Activity activity) {
         this.view = view;
         this.activity = activity;
         firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
         msgDatabaseReference = FirebaseDatabase.getInstance().getReference().child(MESSAGES);
         chatPhotoReference = FirebaseStorage.getInstance().getReference().child(CHAT_PHOTOS);
         msgEventListener = null;
+        authStateListener = null;
     }
 
     public void insertMessage(FriendlyMessage friendlyMessage) {
@@ -75,5 +81,24 @@ public class FirebaseController {
             firebaseRemoteConfig.activateFetched();
             view.applyRetrievedLengthLimit((int) firebaseRemoteConfig.getLong(FRIENDLY_MSG_LENGTH_KEY));
         });
+    }
+
+    public void attachAuthListener() {
+        if (authStateListener == null) {
+            authStateListener = fbAuth -> {
+                if (fbAuth.getCurrentUser() != null)
+                    view.userSignedIn(fbAuth.getCurrentUser().getDisplayName());
+                else
+                    view.promptSignIn();
+            };
+            firebaseAuth.addAuthStateListener(authStateListener);
+        }
+    }
+
+    public void removeAuthListener() {
+        if (authStateListener != null) {
+            firebaseAuth.removeAuthStateListener(authStateListener);
+            authStateListener = null;
+        }
     }
 }

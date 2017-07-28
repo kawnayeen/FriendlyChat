@@ -1,18 +1,3 @@
-/**
- * Copyright Google Inc. All Rights Reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.google.firebase.udacity.friendlychat;
 
 import android.content.Intent;
@@ -32,9 +17,6 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
-import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,9 +38,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     private Button mSendButton;
 
     private String mUsername;
-
-    private FirebaseAuth firebaseAuth;
-    private AuthStateListener authStateListener;
     private FirebaseController firebaseController;
 
 
@@ -66,11 +45,7 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         mUsername = ANONYMOUS;
-
-        firebaseAuth = FirebaseAuth.getInstance();
-
         // Initialize references to views
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mMessageListView = (ListView) findViewById(R.id.messageListView);
@@ -122,24 +97,6 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
             mMessageEditText.setText("");
         });
 
-        authStateListener = fbAuth -> {
-            FirebaseUser user = fbAuth.getCurrentUser();
-            if (user != null) {
-                onSingedInInitialize(user.getDisplayName());
-            } else {
-                onSignedOutCleanup();
-                startActivityForResult(
-                        AuthUI.getInstance()
-                                .createSignInIntentBuilder()
-                                .setIsSmartLockEnabled(false)
-                                .setAvailableProviders(
-                                        Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
-                                                new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()))
-                                .build(),
-                        RC_SIGN_IN);
-            }
-        };
-
         firebaseController = new FirebaseController(this, this);
         firebaseController.fetchConfig();
     }
@@ -184,14 +141,13 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     @Override
     protected void onResume() {
         super.onResume();
-        firebaseAuth.addAuthStateListener(authStateListener);
+        firebaseController.attachAuthListener();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (authStateListener != null)
-            firebaseAuth.removeAuthStateListener(authStateListener);
+        firebaseController.removeAuthListener();
         detachDatabaseReadListener();
         mMessageAdapter.clear();
     }
@@ -218,6 +174,25 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     @Override
     public void imageUploaded(String imageUrl) {
         firebaseController.insertMessage(new FriendlyMessage(null, mUsername, imageUrl));
+    }
+
+    @Override
+    public void userSignedIn(String displayName) {
+        onSingedInInitialize(displayName);
+    }
+
+    @Override
+    public void promptSignIn() {
+        onSignedOutCleanup();
+        startActivityForResult(
+                AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setIsSmartLockEnabled(false)
+                        .setAvailableProviders(
+                                Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                        new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build()))
+                        .build(),
+                RC_SIGN_IN);
     }
 
     @Override

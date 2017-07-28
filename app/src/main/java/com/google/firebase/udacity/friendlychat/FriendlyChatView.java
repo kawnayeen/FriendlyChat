@@ -8,4 +8,6 @@ public interface FriendlyChatView {
     void addMessage(FriendlyMessage friendlyMessage);
     void applyRetrievedLengthLimit(int messageLength);
     void imageUploaded(String imageUrl);
+    void userSignedIn(String displayName);
+    void promptSignIn();
 }
