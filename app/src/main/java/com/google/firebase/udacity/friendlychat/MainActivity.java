@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity implements FriendlyChatView {
 
     public static final String ANONYMOUS = "anonymous";
@@ -30,12 +33,17 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     private static final int RC_PHOTO_PICKER = 2;
     public static final String FRIENDLY_MSG_LENGTH_KEY = "friendly_msg_length";
 
-    private ListView mMessageListView;
     private MessageAdapter mMessageAdapter;
-    private ProgressBar mProgressBar;
-    private ImageButton mPhotoPickerButton;
-    private EditText mMessageEditText;
-    private Button mSendButton;
+    @BindView(R.id.messageListView)
+    ListView mMessageListView;
+    @BindView(R.id.progressBar)
+    ProgressBar mProgressBar;
+    @BindView(R.id.photoPickerButton)
+    ImageButton mPhotoPickerButton;
+    @BindView(R.id.messageEditText)
+    EditText mMessageEditText;
+    @BindView(R.id.sendButton)
+    Button mSendButton;
 
     private String mUsername;
     private FirebaseController firebaseController;
@@ -46,12 +54,7 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mUsername = ANONYMOUS;
-        // Initialize references to views
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mMessageListView = (ListView) findViewById(R.id.messageListView);
-        mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
-        mSendButton = (Button) findViewById(R.id.sendButton);
+        ButterKnife.bind(this);
 
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
