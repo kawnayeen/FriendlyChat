@@ -2,6 +2,7 @@ package com.google.firebase.udacity.friendlychat;
 
 import android.app.Activity;
 import android.net.Uri;
+import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener;
@@ -11,7 +12,12 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.kawnayeen.compressor.Compressor;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,9 +55,17 @@ public class FirebaseController {
         msgDatabaseReference.push().setValue(friendlyMessage);
     }
 
-    public void uploadPhoto(Uri imageUri) {
-        StorageReference photoRef = chatPhotoReference.child(imageUri.getLastPathSegment());
-        photoRef.putFile(imageUri).addOnSuccessListener(activity, taskSnapshot -> view.imageUploaded(taskSnapshot.getDownloadUrl().toString()));
+    public void uploadPhoto(File imageFile) {
+        try {
+            Log.i("kamarul", "Trying file input stream");
+            InputStream stream = new FileInputStream(imageFile);
+            Log.i("kamarul","here");
+            StorageReference photoRef = chatPhotoReference.child(imageFile.getName());
+            photoRef.putStream(stream).addOnSuccessListener(activity, taskSnapshot -> view.imageUploaded(taskSnapshot.getDownloadUrl().toString()));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Log.i("kamarul","Exception in input stream");
+        }
     }
 
     public void singedIn() {

@@ -17,7 +17,10 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.kawnayeen.compressor.Compressor;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -166,7 +169,13 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
                 finish();
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
-            firebaseController.uploadPhoto(data.getData());
+            File compressedFile;
+            try {
+                compressedFile = new Compressor(this).setMaxWidth(512).setMaxHeight(512).setQuality(75).compressToFile(new File(data.getData().getPath()));
+            } catch (IOException e) {
+                compressedFile = new File(data.getData().getPath());
+            }
+            firebaseController.uploadPhoto(compressedFile);
         }
     }
 
