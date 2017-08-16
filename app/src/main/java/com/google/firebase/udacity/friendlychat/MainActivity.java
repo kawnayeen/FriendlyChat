@@ -1,7 +1,11 @@
 package com.google.firebase.udacity.friendlychat;
 
+import android.*;
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -21,6 +25,8 @@ import com.kawnayeen.compressor.Compressor;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     private static final int RC_SIGN_IN = 123;
     private static final int RC_PHOTO_PICKER = 2;
+    private static final int REQUEST_READ_STORAGE = 3;
     public static final String FRIENDLY_MSG_LENGTH_KEY = "friendly_msg_length";
 
     private MessageAdapter mMessageAdapter;
@@ -69,10 +76,11 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
 
         // ImagePickerButton shows an image picker to upload a image for a message
         mPhotoPickerButton.setOnClickListener(view -> {
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("image/jpeg");
-            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-            startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                startPhotoPicker();
+            } else {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_READ_STORAGE);
+            }
         });
 
         // Enable Send button when there's text to send
@@ -105,6 +113,21 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
 
         firebaseController = new FirebaseController(this, this);
         firebaseController.fetchConfig();
+    }
+
+    private void startPhotoPicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, RC_PHOTO_PICKER);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_READ_STORAGE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startPhotoPicker();
+            }
+        } else
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private void onSingedInInitialize(String displayName) {
@@ -169,13 +192,16 @@ public class MainActivity extends AppCompatActivity implements FriendlyChatView 
                 finish();
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
-            File compressedFile;
-            try {
-                compressedFile = new Compressor(this).setMaxWidth(512).setMaxHeight(512).setQuality(75).compressToFile(new File(data.getData().getPath()));
-            } catch (IOException e) {
-                compressedFile = new File(data.getData().getPath());
+            if (data != null && data.getData() != null) {
+                String absolutePath = IntentUtil.getAbsolutePathFromUri(data.getData(), this);
+                File compressedFile;
+                try {
+                    compressedFile = new Compressor(this).setMaxWidth(512).setMaxHeight(512).setQuality(75).compressToFile(new File(absolutePath));
+                } catch (IOException e) {
+                    compressedFile = new File(absolutePath);
+                }
+                firebaseController.uploadPhoto(compressedFile);
             }
-            firebaseController.uploadPhoto(compressedFile);
         }
     }
 
