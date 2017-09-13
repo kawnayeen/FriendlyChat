@@ -9,9 +9,12 @@ FriendlyChat is an app that allows users to send and receive text and photos in 
 Demo : Create Account
 ---------------------
 
+![Demo](https://media.giphy.com/media/3ohhwulnPamoCVjV7O/giphy.gif)
+
 Demo : Send Message
 -------------------
 
+![Demo](https://media.giphy.com/media/3o7aCSnF1WTBiNEhe8/giphy.gif)
 
 You can watch the complete demo [here](https://www.youtube.com/watch?v=g_EvvRau9xo).
 
