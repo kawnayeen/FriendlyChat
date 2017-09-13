@@ -6,9 +6,15 @@ This repository contains code for the FriendlyChat project in the [Firebase in a
 
 FriendlyChat is an app that allows users to send and receive text and photos in realtime across platforms.
 
-## Setup
+Demo : Create Account
+---------------------
 
-Setup requires creating a Firebase project. See https://firebase.google.com/ for more information.
+Demo : Send Message
+-------------------
 
-## License
-See [LICENSE](LICENSE)
+
+You can watch the complete demo [here](https://www.youtube.com/watch?v=g_EvvRau9xo).
+
+Contributor
+-----------
+Muhammad Kamarul Kawnayeen ([@kawnayeen](https://github.com/kawnayeen))
