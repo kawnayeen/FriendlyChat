@@ -53,6 +53,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-crash:16.0.1'
     implementation 'com.firebaseui:firebase-ui-auth:4.0.0'
     implementation 'com.jakewharton:butterknife:8.8.1'
+    implementation 'com.urbanairship.android:urbanairship-fcm:9.1.0'
+    implementation 'com.google.firebase:firebase-messaging:17.0.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
 }
 
