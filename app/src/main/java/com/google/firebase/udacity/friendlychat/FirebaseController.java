@@ -61,7 +61,7 @@ public class FirebaseController {
             InputStream stream = new FileInputStream(imageFile);
             Log.i("kamarul","here");
             StorageReference photoRef = chatPhotoReference.child(imageFile.getName());
-            photoRef.putStream(stream).addOnSuccessListener(activity, taskSnapshot -> view.imageUploaded(taskSnapshot.getDownloadUrl().toString()));
+            photoRef.putStream(stream).addOnSuccessListener(activity, taskSnapshot -> view.imageUploaded(taskSnapshot.getMetadata().getReference().getDownloadUrl().toString()));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             Log.i("kamarul","Exception in input stream");
